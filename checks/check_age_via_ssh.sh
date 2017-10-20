@@ -1,8 +1,7 @@
 #!/bin/bash
 
 ## check_age_via_ssh.sh
-## version 1.0
-##
+## version 1.1
 ## $1 is ssh username
 ## $2 is ssh address
 ## $3 is path to check
@@ -29,41 +28,55 @@
 ##}
 ##
 ##
-## That's all it takes to start using a new Nagios script. 
+## That's all it takes to start using a new Nagios script.
 ##
 ## This script, however, requires automatic, password-less ssh access to your NAS
 ## or wherever you're storing the file/folder you want to monitor.
-## Use this guide to give your Nagios user that power: 
+## Use this guide to give your Nagios user that power:
 ## http://www.thegeekstuff.com/2008/11/3-steps-to-perform-ssh-login-without-password-using-ssh-keygen-ssh-copy-id/
 ## It's only 2 steps. Remember to run these two steps AS THE USER that runs the Nagios check scripts. running "sudo su nagios" might do it.
 ##
 ## then run "sudo systemctl restart nagios" and you're done. Or you've spelled something wrong. Running journalctl -xe might show you where the error is.
 
 
+os=$(ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "uname -o")
 
-## OK, here's the actual script:
-
-
-
-
-sshOutput=$(ssh $1@$2 -o ConnectTimeout=10 -o BatchMode=yes "stat $3 | grep Modify" | awk '{ print $2 }')
+## Run 'stat' if Linux, or fallback to Perl
+if [[ "$os" = GNU/Linux ]] ; then
+        sshOutput=$(ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "stat $3 | grep Modify" | awk '{ print $2 }')
+        sshError=$( (ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "stat $3 | grep Modify" > /dev/null 2>&1 ))
+else
+        sshOutput=$(ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "perl -e 'print +(stat \$ARGV[0])[9]' $3")
+        sshError=$( (ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "perl -e 'print +(stat \$ARGV[0])[9]' $3" > /dev/null 2>&1 ))
+        ## Thanks to Sato Katsura for the above Perl line
+        ## https://unix.stackexchange.com/questions/349555/stat-modification-timestamp-of-a-file
+fi
 
 
 ## Thanks to Adam Crume for the following line, saving the error in a variable
 ## https://stackoverflow.com/questions/3130375/bash-script-store-stderr-in-a-variable
-sshError=$( (ssh $1@$2 -o ConnectTimeout=10 -o BatchMode=yes "stat $3 | grep Modify" > /dev/null) 2>&1 )
 
 
-if [ -z "$sshError" ] ; then
-        if [ $(($(date +%s) - $(date -d $sshOutput +%s))) -lt $4 ] ; then
-                echo "OK - The object was last modified on $sshOutput"
-                exit 0
-        else
-                echo "WARNING - The object hasn't been modified since $sshOutput"
-                exit 1
+if [ -z "$sshError" ] ; then  ## If there's no error, then continue checking age
+        if [[ "$os" = GNU/Linux ]] ; then  ## If the OS is Linux, then we have the date in a human-readable format
+                if [ $(($(date +%s) - $(date -d $sshOutput +%s))) -lt "$4" ] ; then
+                        echo "OK - The object was last modified on $sshOutput"
+                        exit 0
+                else
+                        echo "CRITICAL - The object hasn't been modified since $sshOutput"
+                        exit 2
+                fi
+        else  ## If the OS is not Linux, then we have the date in Unix Epoch format
+                if [ $(($(date +%s) - sshOutput)) -lt "$4" ] ; then
+                        echo "OK - The object was last modified on $( date -d $sshOutput +%Y-%m-%d_%H-%M ) "
+                        exit 0
+                else
+                        echo "CRITICAL - The object hasn't been modified since $( date -d $sshOutput +%Y-%m-%d_%H-%M )"
+                        exit 2
+                fi
         fi
 else
-        echo Connection error - make sure you log into Nagios and run sudo su nagios and finally run ssh-copy-id $1@$2 before adding or editing a service to monitor - $sshError
+        echo "Connection error - make sure you log into Nagios and run sudo su $(whoami) and finally run ssh-copy-id $1@$2 before adding or editing a service to monitor - $sshError"
         exit 2
 fi
 
