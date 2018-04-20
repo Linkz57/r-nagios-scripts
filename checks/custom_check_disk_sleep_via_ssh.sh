@@ -2,7 +2,7 @@
 
 
 ## custom_check_disk_sleep_via_ssh.sh
-## version 0.1
+## version 1.0
 ## $1 is ssh username
 ## $2 is ssh address
 ##
@@ -38,7 +38,7 @@
 
 
 sshOutput=$(ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "vmstat" | awk '(NR==2){for(i=1;i<=NF;i++)if($i=="wa"){getline; print $i}}')
-sshError=$( (ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "vmstat" | grep si > /dev/null 2>&1 ))
+sshError=$( (ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "vmstat" | grep wa > /dev/null 2>&1 ))
 
 ## Thanks to Michalrajer for the above line, parsing vmstat
 ## https://stackoverflow.com/questions/7346675/efficient-way-to-parse-vmstat-output
