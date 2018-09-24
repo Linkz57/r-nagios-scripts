@@ -1,0 +1,7 @@
+## The goal is to run backup_nagios.sh daily while saving stdout and stderr to a text file.
+## That text file will also be written to by the cleanup program that runs early Monday morning.
+## That text file will then be emailed out by mailbackups.sh later Monday morning.
+
+0 21 * * * ~/scripts/backup_nagios.sh >> ~/scripts/backup.mail 2>&1 >> ~/scripts/backup.mail
+0 3 * * MON ~/scripts/cleanup_nagios_backups.sh >> ~/scripts/backup.mail
+0 8 * * MON ~/scripts/mailbackups.sh
