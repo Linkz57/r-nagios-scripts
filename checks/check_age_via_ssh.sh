@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## check_age_via_ssh.sh
-## version 1.1
+## version 1.2
 ## $1 is ssh username
 ## $2 is ssh address
 ## $3 is path to check
@@ -68,10 +68,10 @@ if [ -z "$sshError" ] ; then  ## If there's no error, then continue checking age
                 fi
         else  ## If the OS is not Linux, then we have the date in Unix Epoch format
                 if [ $(($(date +%s) - sshOutput)) -lt "$4" ] ; then
-                        echo "OK - The object was last modified on $( date -d $sshOutput +%Y-%m-%d_%H-%M ) "
+                        echo "OK - The object was last modified on $( date -d @$sshOutput +%Y-%m-%d_%H-%M ) "
                         exit 0
                 else
-                        echo "CRITICAL - The object hasn't been modified since $( date -d $sshOutput +%Y-%m-%d_%H-%M )"
+                        echo "CRITICAL - The object hasn't been modified since $( date -d @$sshOutput +%Y-%m-%d_%H-%M )"
                         exit 2
                 fi
         fi
