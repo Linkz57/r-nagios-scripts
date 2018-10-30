@@ -1,37 +1,41 @@
 #!/bin/bash
 
 ## custom_check_update_needed_via_ssh.sh
-## version 1
+## version 2.2
 ## Check if updates are needed. Throws warning on regular updates, and may later crit on security updates
-## Currently only supports Ubuntu
+## I just want everyone to know how clever I felt just remembering out of no where the syntax for Named Pipes.
+## I think I committed it to memory so easily because it looks like the common diphthong <(^.^)>
+## Version 1 and lower only supported Ubuntu
+## Version 2 should support any OS with PackageKit    https://en.wikipedia.org/wiki/PackageKit#Back-ends
+##
+## $1 is ssh username
+## $2 is ssh password
 
 
 
-sshOutput=$( (ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "/usr/lib/update-notifier/apt-check") 2>&1)
-regular=$(echo "$sshOutput" | cut -d';' -f1)
-security=$(echo "$sshOutput" | cut -d';' -f2)
+sshError=$( (ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "pkcon -p get-updates" > /dev/null 2>&1 ))
+
+if [ -z "$sshError" ] ; then  ## If there's no error, then continue parsing for pending updates
+
+	sshOutput=$(ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "pkcon -p get-updates | tail -n +\$(pkcon -p get-updates | grep -n Results | cut -d':' -f1)")
+	noUpdates="$(printf "Results:\nThere are no updates available at this time.")"   ## This is printed only if there's no updates
+
+	if echo "$sshOutput" | grep "There are no updates available at this time." > /dev/null ; then  ## No updates
+#	if [ "$sshOutput" == "$noUpdates" ] ; then
+		echo "OK - Everything up to date"
+		exit 0
+	else
+		echo "$sshOutput" | cut -d ' ' -f1 | tail -n +2 | uniq --count| cat <(echo Pending updates: ) - | tr -d '\n'
+		exit 1
+	fi
 
 
-## Thanks to Mak Kolybabi for the two cuts above and the tests below
-## https://superuser.com/questions/199869/check-number-of-pending-security-updates-in-ubuntu
-
-
-if [ "$sshOutput" = "0;0" ] ; then
-        echo "OK - Everything up to date"
-        exit 0
+else
+        echo "Connection error - make sure you log into Nagios and run sudo su $(whoami) and finally run ssh-copy-id $1@$2 before adding or editing a service to monitor - $sshError"
+        exit 2
 fi
 
+## If we've gotten this far, then I don't know what the problem could be.
+## I'll tell Nagios to report an "unknown" status to the humans.
+exit 3
 
-if [ "$security" != "0" ] ; then
-        echo "$security security updates pending"
-        exit 1
-fi
-
-
-if [ "$regular" != "0" ] ; then
-        echo "$regular non-security updates pending"
-        exit 1
-fi
-
-echo "Connection error - make sure you log into Nagios and run sudo su nagios and finally run ssh-copy-id before adding or editing a server to monitor - $sshError"
-exit 2
