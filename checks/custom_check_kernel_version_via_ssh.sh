@@ -1,7 +1,7 @@
 #!/bin/bash
 
-## custom_check_os_version_via_ssh.sh
-## version 0.1
+## custom_check_kernel_version_via_ssh.sh
+## version 1.0
 ##
 ## The goal is to simply list the OS version in Nagios so I can sort alphabetically and see who's wildly out of date.
 ## There is almost certainly a better place to retrieve, store, and view this information but I'm using Nagios regardless.
