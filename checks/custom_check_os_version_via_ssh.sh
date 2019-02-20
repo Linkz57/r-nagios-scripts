@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## custom_check_os_version_via_ssh.sh
-## version 1.0
+## version 1.2
 ## $1 is ssh username
 ## $2 is ssh address
 ##
@@ -54,8 +54,11 @@ if [ -z "$sshError" ] ; then  ## If there's no error, then continue checking age
         sshOutput=$(ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "cat /etc/*release")
         if echo "$sshOutput" | grep release ; then
                 exit 0
-        else
+        elif echo "$sshOutput" | grep DISTRIB_DESCRIPTION > /dev/null ; then
                 echo "$sshOutput" | grep DISTRIB_DESCRIPTION | cut -d'"' -f2
+                exit 0
+        else
+                ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "cat /proc/version" | awk -F'[()]' '{print $5}'
                 exit 0
         fi
 else
