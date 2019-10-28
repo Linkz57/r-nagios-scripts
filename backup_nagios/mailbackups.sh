@@ -4,12 +4,12 @@
 ## version 1.1
 
 if cd "~/scripts" ; then
-        echo fine > /dev/null
+	echo fine > /dev/null
 else
         echo "could not cd to ~/scripts"
-        exit 1
+	exit 1
 fi
-pwd -P
+#pwd -P
 
 
 echo "I am three scripts running on $(hostname) in $(pwd -P)" >> backup.mail

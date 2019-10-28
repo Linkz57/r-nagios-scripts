@@ -51,8 +51,8 @@ if [ -z "$sshError" ] ; then
                 echo "OK - $3 is currently running at $2"
                 exit 0
         else
-                echo "WARNING - I don't think $3 is running at $2"
-                exit 1
+                echo "CRITICAL - I don't think $3 is running at $2"
+                exit 2
         fi
 else
         echo "Connection error - make sure you log into Nagios and run sudo su nagios and finally run ssh-copy-id $1@$2 before adding or editing a service to monitor - $sshError"
@@ -63,3 +63,4 @@ fi
 ## If we've gotten this far, then I don't know what the problem could be.
 ## I'll tell Nagios to report an "unknown" status to the humans.
 exit 3
+
