@@ -18,8 +18,8 @@
 ##
 ##
 ## To use this yourself, (on Ubuntu 16.04.4 with Nagios Core 4.3.4)
-## save custom_check_many_files_via_ssh to /usr/local/nagios/libexec
-## chmod +x custom_check_many_files_via_ssh
+## save custom_check_many_files_via_ssh.sh to /usr/local/nagios/libexec
+## chmod +x custom_check_many_files_via_ssh.sh
 ## add following four lines to /usr/local/nagios/etc/objects/commands.cfg
 ## define command {
 ##        command_name    custom_check_many_files_via_ssh
@@ -60,23 +60,23 @@ sshError=$( (ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "find $3 -type 
 
 
 if [ -z "$sshError" ] ; then  ## If there's no error, then continue checking age
-        if [[ "$os" = GNU/Linux ]] || [[ "$os" = FreeBSD ]] ; then  ## If the OS is Linux or FreeBSD, then I feel confidant that its FILE program works as predicted.
-                if echo "$sshOutput" | grep "$4" > /dev/null ; then
-                        echo "OK - The object was last modified within $4 day$plurality"
-                        exit 0
-                else
-                        echo "CRITICAL - The object hasn't been modified within $4 day$plurality"
-                        exit 2
-                fi
-        else  ## If the OS is not Linux or FreeBSD, then who knows if its FILE program works the same.
-                if echo "$sshOutput" | grep "$4" > /dev/null ; then
+	if [[ "$os" = GNU/Linux ]] || [[ "$os" = FreeBSD ]] ; then  ## If the OS is Linux or FreeBSD, then I feel confidant that its FILE program works as predicted.
+	        if echo "$sshOutput" | grep "$4" > /dev/null ; then
+        	        echo "OK - The object was last modified within $4 day$plurality"
+                	exit 0
+	        else
+        	        echo "CRITICAL - The object hasn't been modified within $4 day$plurality"
+                	exit 2
+	        fi
+	else  ## If the OS is not Linux or FreeBSD, then who knows if its FILE program works the same.
+		if echo "$sshOutput" | grep "$4" > /dev/null ; then
                         echo "OK - I think the object was last modified within $4 day$plurality, but maybe not. This script hasn't been fully tested on the platform you're SSHing into."
                         exit 0
                 else
                         echo "CRITICAL - I think the object hasn't been modified within $4 day$plurality, but maybe it has. This script hasn't been fully tested on the platform you're SSHing into."
                         exit 2
                 fi
-        fi
+	fi
 else
         echo "Connection error - make sure you log into Nagios and run sudo su $(whoami) and finally run ssh-copy-id $1@$2 before adding or editing a service to monitor - $sshError"
         exit 2

@@ -2,7 +2,7 @@
 
 
 ## custom_check_disk_sleep_via_ssh.sh
-## version 1.0
+## version 1.1
 ## $1 is ssh username
 ## $2 is ssh address
 ##
@@ -49,22 +49,22 @@ sshError=$( (ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "vmstat" | grep
 
 if [ -z "$sshError" ] ; then  ## If there's no error, then continue checking
 if [ -z "$sshOutput" ] ; then  ## If vmstat and AWK returned a null value, try just running vmstat alone
-        ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "vmstat"
-        exit 1
+	ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "vmstat"
+	exit 1
 fi
 
-        if [ "$sshOutput" -lt 10 ]; then
-                echo "OK - Only waiting $sshOutput TimeUnits on reading/writing to disks/network"
-                exit 0
-        else
-                if [ "$sshOutput" -gt 20 ]; then
-                        echo "CRITICAL - Currently waiting $sshOutput TimeUnits on reading/writing to disks/network. It should be zero."
-                        exit 2
-                else
-                        echo "WARNING - Currently waiting $sshOutput TimeUnits on reading/writing to disks/network. Scrutinize your pipeline before this becomes a problem."
-                        exit 1
-                fi
-        fi
+	if [ "$sshOutput" -lt 10 ]; then
+		echo "OK - Only waiting $sshOutput TimeUnits on reading/writing to disks/network"
+               	exit 0
+       	else
+		if [ "$sshOutput" -gt 30 ]; then
+			echo "CRITICAL - Currently waiting $sshOutput TimeUnits on reading/writing to disks/network. It should be zero."
+        	       	exit 2
+		else
+			echo "WARNING - Currently waiting $sshOutput TimeUnits on reading/writing to disks/network. Scrutinize your pipeline before this becomes a problem."
+			exit 1
+		fi
+       	fi
 else
         echo "Connection error - make sure you log into Nagios and run sudo su $(whoami) and finally run ssh-copy-id $1@$2 before adding or editing a service to monitor - $sshError"
         exit 2

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## custom_check_disk_space_via_ssh.sh
-## version 2.1
+## version 2.3
 ## $1 is ssh username
 ## $2 is ssh address
 ##
@@ -44,21 +44,21 @@ sshError=$( (ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "df -H" > /dev/
 
 
 if [ -z "$sshError" ] ; then  ## If there's no error, then continue checking free space
-        sshOutput=$(ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "df -H" | grep -vE '^Filesystem|tmpfs|cdrom|loop|devfs|fdescfs' | awk '{ print $5 " " $1 }' | sort -h | tail -n1)
-        biggestnumber=$(echo "$sshOutput" | cut -d'%' -f1 )
-        if [ $biggestnumber -ge 90 ]; then
-                echo "CRITICAL - Running out of space - $sshOutput"
-                exit 2
-        elif [ $biggestnumber -ge 80 ]; then
-                echo "WARNING - Running low on space - $sshOutput"
-                exit 1
-        elif [ $biggestnumber -le 81 ]; then
-                echo "OK - you're good on free space. Here's the fullest parition - $sshOutput"
-                exit 0
-        else
-                echo "UNKNOWN - I have no idea what's going on - $sshError - $sshOutput"
-                exit 3
-        fi
+	sshOutput=$(ssh "$1"@"$2" -o ConnectTimeout=10 -o BatchMode=yes "df -h" | grep -vE '^Filesystem|tmpfs|cdrom|loop|devfs|fdescfs' | awk '{ print $5 " " $1 }' | sort -h | tail -n1)
+	biggestnumber=$(echo "$sshOutput" | cut -d'%' -f1 )
+	if [ $biggestnumber -ge 90 ]; then
+		echo "CRITICAL - Running out of space - $sshOutput"
+		exit 2
+	elif [ $biggestnumber -ge 80 ]; then
+		echo "WARNING - Running low on space - $sshOutput"
+		exit 1
+	elif [ $biggestnumber -le 81 ]; then
+		echo "OK - you are ok on free space. Here's the fullest parition - $sshOutput"
+		exit 0
+	else
+		echo "UNKNOWN - I have no idea what's going on - $sshError - $sshOutput"
+		exit 3
+	fi
 else
         echo "Connection error - make sure you log into Nagios and run sudo su $(whoami) and finally run ssh-copy-id $1@$2 before adding or editing a service to monitor - $sshError"
         exit 3
