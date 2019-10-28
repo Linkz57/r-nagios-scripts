@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## custom_check_update_needed_via_ssh.sh
-## version 2.2
+## version 2.4
 ## Check if updates are needed. Throws warning on regular updates, and may later crit on security updates
 ## I just want everyone to know how clever I felt just remembering out of no where the syntax for Named Pipes.
 ## I think I committed it to memory so easily because it looks like the common diphthong <(^.^)>
@@ -25,7 +25,8 @@ if [ -z "$sshError" ] ; then  ## If there's no error, then continue parsing for 
 		echo "OK - Everything up to date"
 		exit 0
 	else
-		echo "$sshOutput" | cut -d ' ' -f1 | tail -n +2 | uniq --count| cat <(echo Pending updates: ) - | tr -d '\n'
+		echo "$sshOutput" | grep -v "Please restart the computer to complete the update\|System restart required by"| cut -d ' ' -f1 | tail -n +2 | sort | uniq --count| cat <(echo Pending updates: ) - | tr -d '\n'
+		printf " fixes"
 		exit 1
 	fi
 
